@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.7](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.6...v0.12.7) (2021-11-23)
+
+
+### Features
+
+* some change to test ([5a4403b](https://github.com/rarible/protocol-ethereum-sdk/commit/5a4403bbc2aa5e4ef04137a0f503cda6bdcefa27))
+
+
+
+
+
 # [0.12.0](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.11.0...v0.12.0) (2021-11-12)
 
 **Note:** Version bump only for package @rarible/ethereum-provider

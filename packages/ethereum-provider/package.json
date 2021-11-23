@@ -1,6 +1,6 @@
 {
   "name": "@rarible/ethereum-provider",
-  "version": "0.12.1",
+  "version": "0.12.7",
   "description": "Library to abstract from web3.js or ethers.js",
   "keywords": [
     "ethereum",
@@ -15,7 +15,6 @@
     "test": "echo \"There's no tests yet\"",
     "verify": "tsc --noEmit"
   },
-
   "dependencies": {
     "eth-sig-util": "^3.0.0"
   },
