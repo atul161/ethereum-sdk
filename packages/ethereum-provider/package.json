@@ -15,6 +15,7 @@
     "test": "echo \"There's no tests yet\"",
     "verify": "tsc --noEmit"
   },
+
   "dependencies": {
     "eth-sig-util": "^3.0.0"
   },
