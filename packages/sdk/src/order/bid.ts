@@ -2,7 +2,9 @@ import type { Erc20AssetType, EthAssetType, Order, OrderForm, RaribleV2OrderForm
 import type { BigNumberValue } from "@rarible/utils/build/bn"
 import { toBn } from "@rarible/utils/build/bn"
 import { Action } from "@rarible/action"
-import { toBigNumber } from "@rarible/types"
+import { randomWord, toAddress, toBigNumber, toBinary } from "@rarible/types"
+import type { Ethereum } from "@rarible/ethereum-provider"
+import type { Maybe } from "@rarible/types/build/maybe"
 import type { HasOrder, HasPrice, OrderRequest, UpsertOrder } from "./upsert-order"
 import type { AssetTypeRequest, AssetTypeResponse } from "./check-asset-type"
 import type { SimpleOrder } from "./types"
@@ -25,7 +27,9 @@ export class OrderBid {
 	constructor(
 		private readonly upserter: UpsertOrder,
 		private readonly checkAssetType: (asset: AssetTypeRequest) => Promise<AssetTypeResponse>,
-	) {}
+		private readonly ethereum: Maybe<Ethereum>,
+	) {
+	}
 
 	readonly bid: BidOrderAction = Action
 		.create({
@@ -84,6 +88,27 @@ export class OrderBid {
 				assetType: order.make.assetType,
 				value: toBigNumber(toBn(price).multipliedBy(order.take.value).toString()),
 			}, order.take)
+		}
+		if (order.type === "CRYPTO_PUNK") {
+			if (!this.ethereum) {
+				throw new Error("Wallet undefined")
+			}
+			return {
+				type: "RARIBLE_V2",
+				maker: toAddress(await this.ethereum.getFrom()),
+				make: {
+					assetType: order.make.assetType,
+					value: toBigNumber(toBn(price).multipliedBy(order.take.value).toString()),
+				},
+				take: order.take,
+				data: {
+					dataType: "RARIBLE_V2_DATA_V1",
+					payouts: [],
+					originFees: [], //todo add our fees
+				},
+				salt: toBigNumber(toBn(randomWord(), 16).toString(10)),
+				signature: toBinary("0x"),
+			}
 		}
 		throw new Error(`Unsupported order type: ${order.type}`)
 	}

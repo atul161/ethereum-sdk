@@ -159,8 +159,8 @@ export function createRaribleSdk(
 		ethereum
 	)
 
-	const sellService = new OrderSell(upsertService, checkAssetType)
-	const bidService = new OrderBid(upsertService, checkAssetType)
+	const sellService = new OrderSell(upsertService, checkAssetType, ethereum)
+	const bidService = new OrderBid(upsertService, checkAssetType, ethereum)
 
 	return {
 		apis,

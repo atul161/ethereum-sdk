@@ -65,7 +65,7 @@ describe.each(providers)("sell", (ethereum) => {
 		orderApi,
 		ethereum
 	)
-	const orderSell = new OrderSell(upserter, checkAssetType)
+	const orderSell = new OrderSell(upserter, checkAssetType, ethereum)
 	const e2eErc721V3ContractAddress = toAddress("0x22f8CE349A3338B15D7fEfc013FA7739F5ea2ff7")
 	const treasury = createE2eWallet()
 	const treasuryAddress = toAddress(treasury.getAddressString())
