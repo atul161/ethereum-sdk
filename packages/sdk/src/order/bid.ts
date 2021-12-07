@@ -1,20 +1,26 @@
 import type { Erc20AssetType, Order, OrderForm, RaribleV2OrderForm } from "@rarible/ethereum-api-client"
 import type { BigNumberValue } from "@rarible/utils/build/bn"
 import { toBn } from "@rarible/utils/build/bn"
+import type { Step } from "@rarible/action"
 import { Action } from "@rarible/action"
 import { toBigNumber } from "@rarible/types"
+import type { EthAssetType } from "@rarible/ethereum-api-client/build/models/AssetType"
+import type { Ethereum } from "@rarible/ethereum-provider"
+import type { Maybe } from "@rarible/types/build/maybe"
 import type { HasOrder, HasPrice, OrderRequest, UpsertOrder } from "./upsert-order"
 import type { AssetTypeRequest, AssetTypeResponse } from "./check-asset-type"
 import type { SimpleOrder } from "./types"
 import type { SellUpdateRequest } from "./sell"
+import { createWethContract } from "./contracts/weth"
 
 export type BidRequest = {
-	makeAssetType: Erc20AssetType
+	makeAssetType: EthAssetType | Erc20AssetType
 	amount: number
 	takeAssetType: AssetTypeRequest
+	convertNativeToken?: boolean
 } & HasPrice & OrderRequest
 
-export type BidOrderOrderStageId = "approve" | "sign"
+export type BidOrderOrderStageId = "convert" | "approve" | "sign"
 export type BidOrderAction = Action<BidOrderOrderStageId, BidRequest, Order>
 
 export type BidUpdateRequest = HasOrder & HasPrice
@@ -23,14 +29,24 @@ export type BidUpdateOrderAction = Action<BidOrderOrderStageId, BidUpdateRequest
 
 export class OrderBid {
 	constructor(
+		private ethereum: Maybe<Ethereum>,
 		private readonly upserter: UpsertOrder,
 		private readonly checkAssetType: (asset: AssetTypeRequest) => Promise<AssetTypeResponse>,
-	) {}
+	) {
+		this.getBidAction = this.getBidAction.bind(this)
+	}
 
-	readonly bid: BidOrderAction = Action
-		.create({
+	getBidAction(request: BidRequest): BidOrderAction {
+		const convertEthStage: Step<"convert", undefined, OrderForm> = {
+			id: "convert" as const,
+			run: async () => {
+
+			},
+		}
+
+		const approveStage: Step<"approve", undefined, OrderForm> = {
 			id: "approve" as const,
-			run: async (request: BidRequest) => {
+			run: async () => {
 				if (request.makeAssetType.assetClass !== "ERC20") {
 					throw new Error(`Make asset type should be ERC-20, received=${request.makeAssetType.assetClass}`)
 				}
@@ -39,11 +55,23 @@ export class OrderBid {
 				await this.upserter.approve(checked, true)
 				return checked
 			},
-		})
-		.thenStep({
+		}
+		const signStage: Step<"sign", OrderForm, Order> = {
 			id: "sign" as const,
 			run: (checked: OrderForm) => this.upserter.upsertRequest(checked),
-		})
+		}
+
+		let bid
+
+		if (request.convertNativeToken) {
+			bid = Action.create(convertEthStage)
+				.thenStep(approveStage)
+		} else {
+			bid = Action.create(approveStage)
+		}
+
+		return bid.thenStep(signStage)
+	}
 
 	readonly update: BidUpdateOrderAction = Action
 		.create({
@@ -98,5 +126,9 @@ export class OrderBid {
 			}, order.take)
 		}
 		throw new Error(`Unsupported order type: ${order.type}`)
+	}
+
+	convertEthToWeth() {
+		createWethContract(this.ethereum)
 	}
 }
