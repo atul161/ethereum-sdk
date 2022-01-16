@@ -53,8 +53,8 @@ export class RaribleV2OrderHandler implements OrderHandler<RaribleV2OrderFillReq
 		if (!this.ethereum) {
 			throw new Error("Wallet undefined")
 		}
-		const withFee = this.getMakeAssetWithFee(order)
-		await waitTx(approve(this.ethereum, this.send, this.config.transferProxies, order.maker, withFee, infinite))
+		//const withFee = this.getMakeAssetWithFee(order)
+		//await waitTx(approve(this.ethereum, this.send, this.config.transferProxies, order.maker, withFee, infinite))
 	}
 
 	async getTransactionData(
@@ -72,6 +72,7 @@ export class RaribleV2OrderHandler implements OrderHandler<RaribleV2OrderFillReq
 			fixSignature(inverted.signature) || "0x",
 		)
 
+		console.log("data is", functionCall.data)
 		return {
 			functionCall,
 			options: this.getMatchV2Options(initial, inverted),
