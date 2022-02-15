@@ -3,6 +3,64 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [0.12.47](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.46...v0.12.47) (2022-02-14)
+
+
+### Bug Fixes
+
+* migrate to ganache instead of old ganache-core ([#119](https://github.com/rarible/protocol-ethereum-sdk/issues/119)) ([9878cf6](https://github.com/rarible/protocol-ethereum-sdk/commit/9878cf68d28784b98c939a676d63b1ab621235d7))
+
+
+
+
+
+## [0.12.43](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.42...v0.12.43) (2022-02-14)
+
+
+### Features
+
+* deploy contracts for tests was moved to tests-common ([fdbcb70](https://github.com/rarible/protocol-ethereum-sdk/commit/fdbcb7084fd7cc3d09abafcc2d2b19b2d6076c7a))
+
+
+
+
+
+## [0.12.42](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.41...v0.12.42) (2022-02-11)
+
+**Note:** Version bump only for package @rarible/ethereum-sdk-test-common
+
+
+
+
+
+## [0.12.34](https://github.com/rarible/ethereum-sdk/compare/v0.12.33...v0.12.34) (2022-01-25)
+
+
+### Features
+
+* add biconomy provider middleware ([9bafdaf](https://github.com/rarible/ethereum-sdk/commit/9bafdafb8e8fcb5a46fc8dbbe2021ab856a807e3))
+* use ethers instead of web3 ([a576484](https://github.com/rarible/ethereum-sdk/commit/a576484a55716a799c84ffd176ca8a49cd684512))
+
+
+
+
+
+## [0.12.31](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.30...v0.12.31) (2022-01-23)
+
+**Note:** Version bump only for package @rarible/ethereum-sdk-test-common
+
+
+
+
+
+## [0.12.30](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.29...v0.12.30) (2022-01-20)
+
+**Note:** Version bump only for package @rarible/ethereum-sdk-test-common
+
+
+
+
+
 ## [0.12.26](https://github.com/rarible/protocol-ethereum-sdk/compare/v0.12.25...v0.12.26) (2021-12-22)
 
 

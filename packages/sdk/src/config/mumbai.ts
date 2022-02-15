@@ -1,6 +1,7 @@
 import { toAddress, ZERO_ADDRESS } from "@rarible/types"
 import { id32 } from "../common/id"
 import type { EthereumConfig } from "./type"
+import { FEE_CONFIG_URL } from "./common"
 
 export const mumbaiConfig: EthereumConfig = {
 	basePath: "https://polygon-api-staging.rarible.org",
@@ -18,9 +19,7 @@ export const mumbaiConfig: EthereumConfig = {
 		openseaV1: ZERO_ADDRESS,
 		cryptoPunks: ZERO_ADDRESS,
 	},
-	fees: {
-		v2: 0,
-	},
+	feeConfigUrl: FEE_CONFIG_URL,
 	openSea: {
 		metadata: id32("RARIBLE"),
 		proxyRegistry: ZERO_ADDRESS,
@@ -29,5 +28,6 @@ export const mumbaiConfig: EthereumConfig = {
 		erc721: toAddress("0xa85180a21786bA65b0778bE1cb5CBA5E5c6cD21d"),
 		erc1155: toAddress("0xAa9CD5834E0009902EeAA3FEfAc6A160e9A096b4"),
 	},
-	weth: ZERO_ADDRESS,
+	weth: toAddress("0xa6fa4fb5f76172d178d61b04b0ecd319c5d1c0aa"),
+	auction: ZERO_ADDRESS,
 }

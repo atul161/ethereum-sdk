@@ -13,7 +13,7 @@ import { Web3Ethereum } from "@rarible/web3-ethereum"
 import { ethers } from "ethers"
 import { EthersEthereum, EthersWeb3ProviderEthereum } from "@rarible/ethers-ethereum"
 import Web3 from "web3"
-import { send as sendTemplate } from "../common/send-transaction"
+import { getSendWithInjects } from "../common/send-transaction"
 import { getApiConfig } from "../config/api-config"
 import { createErc1155V1Collection, createErc1155V2Collection, createErc721V1Collection, createErc721V2Collection, createErc721V3Collection } from "../common/mint"
 import { checkChainId } from "../order/check-chain-id"
@@ -21,7 +21,7 @@ import { getEthereumConfig } from "../config"
 import { signNft } from "./sign-nft"
 import type { ERC1155RequestV1, ERC1155RequestV2, ERC721RequestV1, ERC721RequestV2, ERC721RequestV3} from "./mint"
 import { mint as mintTemplate } from "./mint"
-import { deployErc721V1 } from "./contracts/erc721/deploy/v1"
+import { deployErc721V1 } from "./contracts/erc721/deploy/test/v1"
 import { ERC1155VersionEnum, ERC721VersionEnum } from "./contracts/domain"
 import { getErc721Contract } from "./contracts/erc721"
 import { getErc1155Contract } from "./contracts/erc1155"
@@ -44,7 +44,7 @@ const nftCollectionApi = new NftCollectionControllerApi(configuration)
 const nftLazyMintApi = new NftLazyMintControllerApi(configuration)
 const nftItemApi = new NftItemControllerApi(configuration)
 const gatewayApi = new GatewayControllerApi(configuration)
-const send = sendTemplate.bind(null, gatewayApi)
+
 const e2eErc721V3ContractAddress = toAddress("0x22f8CE349A3338B15D7fEfc013FA7739F5ea2ff7")
 const e2eErc1155V2ContractAddress = toAddress("0x268dF35c389Aa9e1ce0cd83CF8E5752b607dE90d")
 
@@ -58,6 +58,8 @@ describe.each(providers)("mint test", ethereum => {
 	})
 
 	const sign = signNft.bind(null, ethereum, 17)
+
+	const send = getSendWithInjects().bind(null, gatewayApi, checkWalletChainId)
 
 	const mint = mintTemplate
 		.bind(null, ethereum, send, sign, nftCollectionApi)
@@ -163,7 +165,7 @@ describe.each(providers)("mint test", ethereum => {
 		expect(balanceOfMinter).toEqual("100")
 	})
 
-	test("mint ERC-721 v3 lazy", async () => {
+	test.skip("mint ERC-721 v3 lazy", async () => {
 		const minted = await mint({
 			collection: createErc721V3Collection(e2eErc721V3ContractAddress),
 			uri: "ipfs://ipfs/QmfVqzkQcKR1vCNqcZkeVVy94684hyLki7QcVzd9rmjuG5",
@@ -178,7 +180,7 @@ describe.each(providers)("mint test", ethereum => {
 		expect(lazy.uri).toBe("/ipfs/QmfVqzkQcKR1vCNqcZkeVVy94684hyLki7QcVzd9rmjuG5")
 	})
 
-	test("mint ERC-1155 v2 lazy", async () => {
+	test.skip("mint ERC-1155 v2 lazy", async () => {
 		const minted = await mint({
 			collection: createErc1155V2Collection(e2eErc1155V2ContractAddress),
 			uri: "ipfs://ipfs/QmfVqzkQcKR1vCNqcZkeVVy94684hyLki7QcVzd9rmjuG5",

@@ -1,6 +1,7 @@
-import { toAddress } from "@rarible/types"
+import { toAddress, ZERO_ADDRESS } from "@rarible/types"
 import { id32 } from "../common/id"
 import type { EthereumConfig } from "./type"
+import { FEE_CONFIG_URL } from "./common"
 
 export const mainnetConfig: EthereumConfig = {
 	basePath: "https://ethereum-api.rarible.org",
@@ -18,9 +19,7 @@ export const mainnetConfig: EthereumConfig = {
 		openseaV1: toAddress("0xe5c783ee536cf5e63e792988335c4255169be4e1"),
 		cryptoPunks: toAddress("0xdf907c1b541b1843b511d115e2fef78a6a830772"),
 	},
-	fees: {
-		v2: 0,
-	},
+	feeConfigUrl: FEE_CONFIG_URL,
 	openSea: {
 		metadata: id32("RARIBLE"),
 		proxyRegistry: toAddress("0xa5409ec958c83c3f309868babaca7c86dcb077c1"),
@@ -30,4 +29,5 @@ export const mainnetConfig: EthereumConfig = {
 		erc1155: toAddress("0xda5bfe0bd4443d63833c8f4e3284357299eae6bc"),
 	},
 	weth: toAddress("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"),
+	auction: ZERO_ADDRESS,
 }

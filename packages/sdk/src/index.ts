@@ -1,5 +1,5 @@
 import type { Ethereum, EthereumTransaction } from "@rarible/ethereum-provider"
-import type { Address, ConfigurationParameters, OrderForm } from "@rarible/ethereum-api-client"
+import type { Address, OrderForm } from "@rarible/ethereum-api-client"
 import type { BigNumber } from "@rarible/types"
 import type { Maybe } from "@rarible/types/build/maybe"
 import type { BigNumberValue } from "@rarible/utils/build/bn"
@@ -11,7 +11,7 @@ import { approve as approveTemplate } from "./order/approve"
 import type { SellOrderAction, SellOrderUpdateAction } from "./order/sell"
 import { OrderSell } from "./order/sell"
 import { signOrder as signOrderTemplate } from "./order/sign-order"
-import type { BidOrderAction, BidUpdateOrderAction} from "./order/bid"
+import type { BidOrderAction, BidUpdateOrderAction } from "./order/bid"
 import { OrderBid } from "./order/bid"
 import * as order from "./order"
 import { checkAssetType as checkAssetTypeTemplate } from "./order/check-asset-type"
@@ -20,25 +20,36 @@ import { mint as mintTemplate } from "./nft/mint"
 import type { TransferAsset } from "./nft/transfer"
 import { transfer as transferTemplate } from "./nft/transfer"
 import { signNft as signNftTemplate } from "./nft/sign-nft"
-import type { BurnAsset } from "./nft/burn"
+import type { BurnRequest } from "./nft/burn"
 import { burn as burnTemplate } from "./nft/burn"
 import type { RaribleEthereumApis } from "./common/apis"
 import { createEthereumApis } from "./common/apis"
-import { send as sendTemplate } from "./common/send-transaction"
+import { getSendWithInjects } from "./common/send-transaction"
 import { cancel as cancelTemplate } from "./order/cancel"
-import type { FillOrderAction } from "./order/fill-order/types"
+import type { FillOrderAction, GetOrderFillTxData } from "./order/fill-order/types"
 import type { SimpleOrder } from "./order/types"
 import { OrderFiller } from "./order/fill-order"
-import { getBaseOrderFee as getBaseOrderFeeTemplate } from "./order/get-base-order-fee"
+import { getBaseFee } from "./common/get-base-fee"
 import { DeployErc721 } from "./nft/deploy-erc721"
 import { DeployErc1155 } from "./nft/deploy-erc1155"
 import type { DeployNft } from "./common/deploy"
-import type { BalanceRequestAssetType} from "./common/balances"
+import type { BalanceRequestAssetType } from "./common/balances"
 import { Balances } from "./common/balances"
 import type { EthereumNetwork } from "./types"
-import type { GetOrderFillTxData } from "./order/fill-order/types"
+import type { IRaribleEthereumSdkConfig } from "./types"
+import { LogsLevel } from "./types"
 import { ConvertWeth } from "./order/convert-weth"
 import { checkChainId } from "./order/check-chain-id"
+import type { AuctionStartAction} from "./auction/start"
+import { StartAuction } from "./auction/start"
+import { cancelAuction } from "./auction/cancel"
+import { finishAuction } from "./auction/finish"
+import type { PutAuctionBidAction } from "./auction/put-bid"
+import { PutAuctionBid } from "./auction/put-bid"
+import type { BuyoutAuctionAction } from "./auction/buy-out"
+import { BuyoutAuction } from "./auction/buy-out"
+import { createRemoteLogger, getEnvironment } from "./common/logger/logger"
+import { getAuctionHash } from "./auction/common"
 
 export interface RaribleOrderSdk {
 	/**
@@ -126,10 +137,9 @@ export interface RaribleNftSdk {
 	transfer(asset: TransferAsset, to: Address, amount?: BigNumber): Promise<EthereumTransaction>
 
 	/**
-	 * @param asset asset to burn
-	 * @param amount amount to burn
+	 * @param request burn request
 	 */
-	burn(asset: BurnAsset, amount?: BigNumber): Promise<EthereumTransaction | void>
+	burn(request: BurnRequest): Promise<EthereumTransaction | void>
 
 	deploy: DeployNft
 }
@@ -156,9 +166,47 @@ export interface RaribleBalancesSdk {
 	getWethContractAddress(): Address
 }
 
+export interface RaribleAuctionSdk {
+	/**
+   * Start new auction
+   * @param request start auction request
+   */
+	start: AuctionStartAction
+
+	/**
+   * Cancel started auction
+   * @param hash Auction hash
+   */
+	cancel(hash: string): Promise<EthereumTransaction>
+
+	/**
+   * Finish auction with at least one bid
+   * @param hash Auction hash
+   */
+	finish(hash: string): Promise<EthereumTransaction>
+
+	/**
+   * Put bid
+   * @param request Put bid request
+   */
+	putBid: PutAuctionBidAction
+
+	/**
+   * Buy out auction if it possible
+   * @param request Buy out request
+   */
+	buyOut: BuyoutAuctionAction
+	/**
+   * Generate hash of auction by id
+   * @param auctionId Auction ID
+   */
+	getHash: (auctionId: BigNumber) => string
+}
+
 export interface RaribleSdk {
 	order: RaribleOrderSdk
 	nft: RaribleNftSdk
+	auction: RaribleAuctionSdk
 	apis: RaribleEthereumApis
 	balances: RaribleBalancesSdk
 }
@@ -167,21 +215,32 @@ export interface RaribleSdk {
 export function createRaribleSdk(
 	ethereum: Maybe<Ethereum>,
 	env: EthereumNetwork,
-	params?: ConfigurationParameters
+	sdkConfig?: IRaribleEthereumSdkConfig
 ): RaribleSdk {
 	const config = getEthereumConfig(env)
-	const apis = createEthereumApis(env, params)
-	const send = partialCall(sendTemplate, apis.gateway)
+	const apis = createEthereumApis(env, sdkConfig?.apiClientParams)
+	const checkWalletChainId = checkChainId.bind(null, ethereum, config)
+
+	const sendWithInjects = partialCall(getSendWithInjects({
+		logger: {
+			instance: createRemoteLogger({ethereum, env: getEnvironment(env)}),
+			level: sdkConfig?.logs ?? LogsLevel.DISABLED,
+		},
+	}), apis.gateway)
+	const send = partialCall(sendWithInjects, checkWalletChainId)
 	const checkLazyAssetType = partialCall(order.checkLazyAssetType, apis.nftItem)
 	const checkLazyAsset = partialCall(order.checkLazyAsset, checkLazyAssetType)
 	const checkLazyOrder = order.checkLazyOrder.bind(null, checkLazyAsset)
 	const checkAssetType = partialCall(checkAssetTypeTemplate, apis.nftCollection)
-	const checkWalletChainId = checkChainId.bind(null, ethereum, config)
 
-	const filler = new OrderFiller(ethereum, send, config, apis)
+	const getBaseOrderFee = getBaseFee.bind(null, config, env)
+	const filler = new OrderFiller(ethereum, send, config, apis, getBaseOrderFee)
+
+	const approveFn = partialCall(approveTemplate, ethereum, send, config.transferProxies)
 
 	const upsertService = new UpsertOrder(
 		filler,
+		send,
 		checkLazyOrder,
 		partialCall(approveTemplate, ethereum, send, config.transferProxies),
 		partialCall(signOrderTemplate, ethereum, config),
@@ -193,6 +252,9 @@ export function createRaribleSdk(
 	const sellService = new OrderSell(upsertService, checkAssetType, checkWalletChainId)
 	const bidService = new OrderBid(upsertService, checkAssetType, checkWalletChainId)
 	const wethConverter = new ConvertWeth(ethereum, send, config)
+	const startAuctionService = new StartAuction(ethereum, send, config, env, approveFn, apis)
+	const putAuctionBidService = new PutAuctionBid(ethereum, send, config, env, approveFn, apis)
+	const buyOutAuctionService = new BuyoutAuction(ethereum, send, config, env, approveFn, apis)
 
 	return {
 		apis,
@@ -206,9 +268,17 @@ export function createRaribleSdk(
 			bid: bidService.bid,
 			bidUpdate: bidService.update,
 			upsert: upsertService.upsert,
-			cancel: partialCall(cancelTemplate, checkLazyOrder, ethereum, config.exchange, checkWalletChainId),
-			getBaseOrderFee: getBaseOrderFeeTemplate.bind(null, config),
+			cancel: partialCall(cancelTemplate, checkLazyOrder, ethereum, send, config.exchange, checkWalletChainId),
+			getBaseOrderFee: getBaseOrderFee,
 			getBaseOrderFillFee: filler.getBaseOrderFillFee,
+		},
+		auction: {
+			start: startAuctionService.start,
+			cancel: cancelAuction.bind(null, ethereum, send, config, apis),
+			finish: finishAuction.bind(null, ethereum, send, config, apis),
+			putBid: putAuctionBidService.putBid,
+			buyOut: buyOutAuctionService.buyout,
+			getHash: getAuctionHash.bind(null, ethereum, config),
 		},
 		nft: {
 			mint: partialCall(
@@ -236,7 +306,7 @@ export function createRaribleSdk(
 			},
 		},
 		balances: {
-			getBalance: new Balances(ethereum, apis.erc20Balance).getBalance,
+			getBalance: new Balances(ethereum, apis.erc20Balance, checkWalletChainId).getBalance,
 			convert: wethConverter.convert,
 			getWethContractAddress: wethConverter.getWethContractAddress,
 		},

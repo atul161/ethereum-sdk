@@ -1,5 +1,6 @@
 import type { Address, BigNumber, Binary, Word } from "@rarible/types"
 import type { MessageTypes, TypedMessage } from "./domain"
+export * from "./domain"
 
 export type EthereumTransactionEvent = {
 	event: string,
@@ -38,8 +39,15 @@ export interface EthereumSendOptions {
 	gasPrice?: number
 }
 
+export interface EthereumFunctionCallInfo {
+	method: string
+	args: any[]
+	from?: string
+}
+
 export interface EthereumFunctionCall {
 	data: string
+	getCallInfo(): Promise<EthereumFunctionCallInfo>
 	estimateGas(): Promise<number>
 	call(options?: EthereumSendOptions): Promise<any>
 	send(options?: EthereumSendOptions): Promise<EthereumTransaction>

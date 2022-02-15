@@ -14,7 +14,7 @@ import { getApiConfig } from "../config/api-config"
 import type { ERC721RequestV3 } from "../nft/mint"
 import { mint as mintTemplate } from "../nft/mint"
 import { createTestProviders } from "../common/create-test-providers"
-import { send as sendTemplate, simpleSend } from "../common/send-transaction"
+import { getSendWithInjects } from "../common/send-transaction"
 import { signNft as signNftTemplate } from "../nft/sign-nft"
 import { createErc721V3Collection } from "../common/mint"
 import { delay, retry } from "../common/retry"
@@ -33,25 +33,28 @@ const { provider, wallet } = createE2eProvider(
 const { providers } = createTestProviders(provider, wallet)
 
 describe.each(providers)("sell", (ethereum) => {
-	const configuration = new Configuration(getApiConfig("e2e"))
+	const env = "e2e" as const
+	const configuration = new Configuration(getApiConfig(env))
 	const nftCollectionApi = new NftCollectionControllerApi(configuration)
 	const gatewayApi = new GatewayControllerApi(configuration)
 	const nftLazyMintApi = new NftLazyMintControllerApi(configuration)
 	const orderApi = new OrderControllerApi(configuration)
-	const send = sendTemplate.bind(null, gatewayApi)
-	const config = getEthereumConfig("e2e")
+	const config = getEthereumConfig(env)
 	const signOrder = signOrderTemplate.bind(null, ethereum, config)
 	const checkAssetType = checkAssetTypeTemplate.bind(null, nftCollectionApi)
 	const signNft = signNftTemplate.bind(null, ethereum, config.chainId)
 	const checkWalletChainId = checkChainId.bind(null, ethereum, config)
+	const send = getSendWithInjects().bind(null, gatewayApi, checkWalletChainId)
 	const mint = mintTemplate
 		.bind(null, ethereum, send, signNft, nftCollectionApi)
 		.bind(null, nftLazyMintApi, checkWalletChainId)
 	const apis = createEthereumApis("e2e")
 
-	const orderService = new OrderFiller(ethereum, simpleSend, config, apis)
+	const getBaseOrderFee = async () => 0
+	const orderService = new OrderFiller(ethereum, send, config, apis, getBaseOrderFee)
 	const upserter = new UpsertOrder(
 		orderService,
+		send,
 		(x) => Promise.resolve(x),
 		() => Promise.resolve(undefined),
 		signOrder,
@@ -94,9 +97,11 @@ describe.each(providers)("sell", (ethereum) => {
 				account: treasuryAddress,
 				value: 100,
 			}],
+			start: Math.round(Date.now()/1000 + 10),
+			end: Math.round(Date.now()/1000 + 200),
 		})
 
-		console.log("hash", order.hash)
+		expect(order.status).toBe("INACTIVE")
 		expect(order.hash).toBeTruthy()
 
 		await delay(1000)
@@ -109,7 +114,6 @@ describe.each(providers)("sell", (ethereum) => {
 				price: nextPrice,
 			})
 			expect(updatedOrder.take.value.toString()).toBe(nextPrice.toString())
-			console.log("updatedOrder", updatedOrder)
 		})
 	})
 
