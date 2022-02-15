@@ -12,6 +12,7 @@ import { waitTx } from "../../common/wait-tx"
 import type { SimpleRaribleV2Order } from "../types"
 import { isSigner } from "../../common/is-signer"
 import { fixSignature } from "../../common/fix-signature"
+import type { SimpleOrder } from "../types"
 import { invertOrder } from "./invert-order"
 import type { OrderHandler, RaribleV2OrderFillRequest } from "./types"
 import type { OrderFillSendData } from "./types"
@@ -19,9 +20,10 @@ import type { OrderFillSendData } from "./types"
 export class RaribleV2OrderHandler implements OrderHandler<RaribleV2OrderFillRequest> {
 
 	constructor(
-		readonly ethereum: Maybe<Ethereum>,
-		readonly send: SendFunction,
-		readonly config: EthereumConfig,
+		private readonly ethereum: Maybe<Ethereum>,
+		private readonly send: SendFunction,
+		private readonly config: EthereumConfig,
+		private readonly getBaseOrderFeeConfig: (type: SimpleOrder["type"]) => Promise<number>,
 	) {}
 
 	invert(request: RaribleV2OrderFillRequest, maker: Address): SimpleRaribleV2Order {
@@ -53,8 +55,8 @@ export class RaribleV2OrderHandler implements OrderHandler<RaribleV2OrderFillReq
 		if (!this.ethereum) {
 			throw new Error("Wallet undefined")
 		}
-		//const withFee = this.getMakeAssetWithFee(order)
-		//await waitTx(approve(this.ethereum, this.send, this.config.transferProxies, order.maker, withFee, infinite))
+		// const withFee = await this.getMakeAssetWithFee(order)
+		// await waitTx(approve(this.ethereum, this.send, this.config.transferProxies, order.maker, withFee, infinite))
 	}
 
 	async getTransactionData(
@@ -75,7 +77,7 @@ export class RaribleV2OrderHandler implements OrderHandler<RaribleV2OrderFillReq
 		console.log("data is", functionCall.data)
 		return {
 			functionCall,
-			options: this.getMatchV2Options(initial, inverted),
+			options: await this.getMatchV2Options(initial, inverted),
 		}
 	}
 
@@ -95,29 +97,29 @@ export class RaribleV2OrderHandler implements OrderHandler<RaribleV2OrderFillReq
 		return orderToStruct(this.ethereum, order, !isMakerSigner)
 	}
 
-	getMatchV2Options(
+	async getMatchV2Options(
 		left: SimpleRaribleV2Order, right: SimpleRaribleV2Order,
-	): EthereumSendOptions {
+	): Promise<EthereumSendOptions> {
 		if (left.make.assetType.assetClass === "ETH" && left.salt === ZERO_WORD) {
-			const asset = this.getMakeAssetWithFee(left)
+			const asset = await this.getMakeAssetWithFee(left)
 			return { value: asset.value }
 		} else if (right.make.assetType.assetClass === "ETH" && right.salt === ZERO_WORD) {
-			const asset = this.getMakeAssetWithFee(right)
+			const asset = await this.getMakeAssetWithFee(right)
 			return { value: asset.value }
 		} else {
 			return {}
 		}
 	}
 
-	getMakeAssetWithFee(order: SimpleRaribleV2Order) {
-		return getAssetWithFee(order.make, this.getOrderFee(order))
+	async getMakeAssetWithFee(order: SimpleRaribleV2Order) {
+		return getAssetWithFee(order.make, await this.getOrderFee(order))
 	}
 
-	getOrderFee(order: SimpleRaribleV2Order): number {
-		return order.data.originFees.map(f => f.value).reduce((v, acc) => v + acc, 0) + this.getBaseOrderFee()
+	async getOrderFee(order: SimpleRaribleV2Order): Promise<number> {
+		return order.data.originFees.map(f => f.value).reduce((v, acc) => v + acc, 0) + await this.getBaseOrderFee()
 	}
 
-	getBaseOrderFee(): number {
-		return this.config.fees.v2
+	async getBaseOrderFee(): Promise<number> {
+		return this.getBaseOrderFeeConfig("RARIBLE_V2")
 	}
 }
