@@ -12,8 +12,8 @@ export function createE2eProvider(pk: string = randomWord(), config: {
 	networkId: number
 	rpcUl: string
 } = {
-	networkId: 17,
-	rpcUl: "https://node-e2e.rarible.com",
+	networkId: 1337,
+	rpcUl: "https://dev-ethereum-node.rarible.com",
 }) {
 	const provider = new Web3ProviderEngine({ pollingInterval: 100 })
 	const wallet = createE2eWallet(pk)

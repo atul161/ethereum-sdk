@@ -41,64 +41,21 @@ describe("fillOrder", () => {
 
 	const it = awaitAll({
 		testErc20: deployTestErc20(web3, "Test1", "TST1"),
-		testErc721: deployTestErc721(web3, "Test", "TST"),
-		testErc1155: deployTestErc1155(web3, "Test"),
-		transferProxy: deployTransferProxy(web3),
-		erc20TransferProxy: deployErc20TransferProxy(web3),
-		royaltiesProvider: deployTestRoyaltiesProvider(web3),
-		exchangeV2: deployTestExchangeV2(web3),
-		punksMarket: deployCryptoPunks(web3),
-		punksTransferProxy: deployCryptoPunkTransferProxy(web3),
-		punkAssetMatcher: deployCryptoPunkAssetMatcher(web3),
+		// testErc721: deployTestErc721(web3, "Test", "TST"),
+		// testErc1155: deployTestErc1155(web3, "Test"),
+		// transferProxy: deployTransferProxy(web3),
+		// erc20TransferProxy: deployErc20TransferProxy(web3),
+		// royaltiesProvider: deployTestRoyaltiesProvider(web3),
+		// exchangeV2: deployTestExchangeV2(web3),
+		// punksMarket: deployCryptoPunks(web3),
+		// punksTransferProxy: deployCryptoPunkTransferProxy(web3),
+		// punkAssetMatcher: deployCryptoPunkAssetMatcher(web3),
 	})
 
-	beforeAll(async () => {
-		/**
-		 * Configuring
-		 */
-		await sentTx(
-			it.exchangeV2.methods.__ExchangeV2_init(
-				toAddress(it.transferProxy.options.address),
-				// ZERO_ADDRESS,
-				toAddress(it.erc20TransferProxy.options.address),
-				toBigNumber("0"),
-				// sender1Address,
-				ZERO_ADDRESS,
-				// toAddress(it.royaltiesProvider.options.address)
-				ZERO_ADDRESS
-			),
-			{ from: sender1Address }
-		)
-		config.exchange.v1 = toAddress(it.exchangeV2.options.address)
-		config.exchange.v2 = toAddress(it.exchangeV2.options.address)
-		config.transferProxies.cryptoPunks = toAddress(it.punksTransferProxy.options.address)
-		config.chainId = 17
-
-		await sentTx(it.erc20TransferProxy.methods.addOperator(toAddress(it.exchangeV2.options.address)), {
-			from: sender1Address,
-		})
-
-		await sentTx(
-			it.exchangeV2.methods.setTransferProxy(
-				id("CRYPTO_PUNKS"),
-				it.punksTransferProxy.options.address
-			),
-			{from: sender1Address}
-		)
-
-		//Set asset matcher for crypto punks
-		await sentTx(
-			it.exchangeV2.methods.setAssetMatcher(
-				id("CRYPTO_PUNKS"),
-				it.punkAssetMatcher.options.address
-			),
-			{from: sender1Address}
-		)
-
-		await sentTx(it.punksMarket.methods.allInitialOwnersAssigned(), {from: sender1Address})
-
+	test("as", async () => {
+		console.log("gi")
 	})
-
+/*
 	test("get transaction data", async () => {
 		const left: SimpleOrder = {
 			make: {
@@ -212,4 +169,6 @@ describe("fillOrder", () => {
 		})
 	})
 
+
+ */
 })

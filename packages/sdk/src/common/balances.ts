@@ -8,13 +8,14 @@ import type { Erc20BalanceControllerApi } from "@rarible/ethereum-api-client"
 import type { BigNumberValue } from "@rarible/utils"
 import { BigNumber, toBn } from "@rarible/utils"
 import type { Maybe } from "@rarible/types/build/maybe"
+import type { RaribleEthereumApis } from "./apis"
 
 export type BalanceRequestAssetType = EthAssetType | Erc20AssetType
 
 export class Balances {
 	constructor(
 		private ethereum: Maybe<Ethereum>,
-		private erc20BalanceController: Erc20BalanceControllerApi,
+		private api: RaribleEthereumApis,
 		private readonly checkWalletChainId: () => Promise<boolean>,
 	) {
 		this.getBalance = this.getBalance.bind(this)
@@ -31,7 +32,7 @@ export class Balances {
 					.div(new BigNumber(10).pow(18))
 			}
 			case "ERC20": {
-				const balance = await this.erc20BalanceController.getErc20Balance({
+				const balance = await this.api.erc20Balance.getErc20TokenById({
 					contract: assetType.contract,
 					owner: address,
 				})
